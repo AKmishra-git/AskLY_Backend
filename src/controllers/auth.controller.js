@@ -4,13 +4,14 @@ import { sendEmail } from "../services/mail.service.js";
 import { header } from "express-validator";
 
 export async function registerController(req, res) {
-   
     const { username, email, password } = req.body;
 
-    try{
-        const isUserAlreadyExists = await userModel.findOne({ $or: [ { email }, { username } ] });
+    try {
+        const isUserAlreadyExists = await userModel.findOne({
+            $or: [{ email }, { username }]
+        });
 
-        if(isUserAlreadyExists){
+        if (isUserAlreadyExists) {
             return res.status(400).json({
                 success: false,
                 message: "User with this email or username already exists"
@@ -20,94 +21,87 @@ export async function registerController(req, res) {
         const newUser = await userModel.create({ username, email, password });
 
         const emailVerificationToken = jwt.sign(
-            {email: newUser.email},
+            { email: newUser.email },
             process.env.JWT_SECRET,
-      
+            { expiresIn: "1d" }
         );
+
+        // 🔥 HARDCODED BACKEND URL
+        const verifyLink = `https://askly-backend.onrender.com/api/auth/verify-email?token=${emailVerificationToken}`;
+
         await sendEmail({
             to: email,
-            subject: 'Welcome to our platform!',
-            html:`<h2>Hello ${username}</h2>
+            subject: "Verify your email - Askly",
+            html: `
+                <h2>Hello ${username}</h2>
 
-Thank you for registering with Askly. We’re delighted to have you on board.
-<br/>
+                <p>Thank you for registering with Askly. We’re delighted to have you on board.</p>
 
-To get started, please verify your email address using the link 👇.
-<br/>
-<a href="http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}">Verify Email</a>
-<br/>
-If you did not create this account, you can safely ignore this email.
-<br/>
+                <p>Please verify your email by clicking the link below:</p>
 
-Best regards,  
-<br/>
-Lumina Team`,
-    
-            text: `Hello ${username},\n\nThank you for registering on our platform. We're excited to have you on board!`
+                <a href="${verifyLink}" target="_blank">Verify Email</a>
+
+                <p>If you did not create this account, you can ignore this email.</p>
+
+                <br/>
+                <p>Best regards,<br/>Askly Team</p>
+            `,
+            text: `Hello ${username}, please verify your email: ${verifyLink}`
         });
 
-
-        res.status(201).json({ 
+        res.status(201).json({
             success: true,
-            message: "User registered successfully", 
-            user:{
+            message: "User registered successfully. Please check your email.",
+            user: {
                 id: newUser._id,
                 username: newUser.username,
                 email: newUser.email
-            }   
-
+            }
         });
 
-
-
-
-    }catch(error){
-        console.error('Error in registerController:', error);
+    } catch (error) {
+        console.error("Error in registerController:", error);
         res.status(500).json({
             success: false,
             message: "An error occurred while registering the user"
         });
     }
-    
 }
 
 export async function verifyEmailController(req, res) {
     const token = req.query.token;
 
     try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await userModel.findOne({ email: decoded.email });
 
-    const user = await userModel.findOne({ email: decoded.email });
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid token or user does not exist"
+            });
+        }
 
-    if (!user) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid token or user does not exist"
-        });
-    }
+        user.verified = true;
+        await user.save();
 
-    user.verified = true;
-    await user.save();
+        // 🔥 HARDCODED FRONTEND URL
+        const html = `
+            <h1>Email Verified Successfully!</h1>
+            <p>You can now log in to your account.</p>
+            <a href="https://askly-dev.netlify.app/login">Go to Login</a>
+        `;
 
-    const html = `<h1>Email Verified Succesfully! </h1><p>Thank you for verifying your email. You can now log in to your account.</p>
-    <a href="http://localhost:5173/login">Go to Login</a>`;
+        res.send(html);
 
-    res.send(html);
-
-
-   }catch (error) {
-        console.error('Error in verifyEmailController:', error);
+    } catch (error) {
+        console.error("Error in verifyEmailController:", error);
         res.status(500).json({
             success: false,
             message: "An error occurred while verifying the email"
         });
-
     }
-
-
-
-
 }
 
 export async function loginController(req, res) {
