@@ -29,7 +29,7 @@ export async function registerController(req, res) {
         // 🔥 HARDCODED BACKEND URL
         const verifyLink = `https://askly-backend.onrender.com/api/auth/verify-email?token=${emailVerificationToken}`;
 
-        await sendEmail({
+        /*await sendEmail({
             to: email,
             subject: "Verify your email - Askly",
             html: `
@@ -47,7 +47,7 @@ export async function registerController(req, res) {
                 <p>Best regards,<br/>Askly Team</p>
             `,
             text: `Hello ${username}, please verify your email: ${verifyLink}`
-        });
+        });*/
 
         res.status(201).json({
             success: true,
