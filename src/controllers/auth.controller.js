@@ -85,7 +85,7 @@ export async function verifyEmailController(req, res) {
         const html = `
             <h1>Email Verified Successfully!</h1>
             <p>You can now log in to your account.</p>
-            <a href="https://askly-dev.netlify.app/login">Go to Login</a>
+            <a href="${process.env.FRONTEND_URL}/login">Go to Login</a>
         `;
 
         res.send(html);
