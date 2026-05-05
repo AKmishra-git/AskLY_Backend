@@ -26,30 +26,25 @@ export async function registerController(req, res) {
             { expiresIn: "1d" }
         );
 
-        // 🔥 HARDCODED BACKEND URL
         const verifyLink = `https://askly-backend.onrender.com/api/auth/verify-email?token=${emailVerificationToken}`;
 
-        await sendEmail({
-            to: email,
-            subject: "Verify your email - Askly",
-            html: `
-                <h2>Hello ${username}</h2>
+        // 🔥 Email should NOT break register
+        try {
+            await sendEmail({
+                to: email,
+                subject: "Verify your email - Askly",
+                html: `
+                    <h2>Hello ${username}</h2>
+                    <p>Please verify your email:</p>
+                    <a href="${verifyLink}">Verify Email</a>
+                `,
+            });
+        } catch (err) {
+            console.error("EMAIL ERROR:", err.message);
+        }
 
-                <p>Thank you for registering with Askly. We’re delighted to have you on board.</p>
-
-                <p>Please verify your email by clicking the link below:</p>
-
-                <a href="${verifyLink}" target="_blank">Verify Email</a>
-
-                <p>If you did not create this account, you can ignore this email.</p>
-
-                <br/>
-                <p>Best regards,<br/>Askly Team</p>
-            `,
-            text: `Hello ${username}, please verify your email: ${verifyLink}`
-        });
-
-        res.status(201).json({
+        // ✅ ALWAYS send success response
+        return res.status(201).json({
             success: true,
             message: "User registered successfully. Please check your email.",
             user: {
@@ -60,14 +55,12 @@ export async function registerController(req, res) {
         });
 
     } catch (error) {
-       
         console.error("REGISTER ERROR:", error);
-        res.status(500).json({
+        return res.status(500).json({
             success: false,
             message: error.message
         });
-}
-    
+    }
 }
 
 export async function verifyEmailController(req, res) {
