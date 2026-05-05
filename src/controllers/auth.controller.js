@@ -1,7 +1,7 @@
 import userModel from "../models/user.model.js";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "../services/mail.service.js";
-import { header } from "express-validator";
+
 
 export async function registerController(req, res) {
     const { username, email, password } = req.body;
