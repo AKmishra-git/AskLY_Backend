@@ -11,4 +11,8 @@ authRouter.post('/login', validateLogin, handleValidationErrors, loginController
 authRouter.get('/get-me', authMiddleware, getMeController);
 authRouter.get('/verify-email',verifyEmailController);
 
+authRouter.get("/test", (req, res) => {
+  res.send("Auth route working");
+});
+
 export default authRouter;
