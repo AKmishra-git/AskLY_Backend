@@ -1,56 +1,23 @@
-import nodemailer from "nodemailer";
-import { google } from "googleapis";
+import { Resend } from 'resend';
 
-const OAuth2 = google.auth.OAuth2;
-
-async function createTransporter() {
-  const oauth2Client = new OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    "https://developers.google.com/oauthplayground"
-  );
-
-  oauth2Client.setCredentials({
-    refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-  });
-
-  const accessToken = await oauth2Client.getAccessToken();
-
-  if (!accessToken.token) {
-    throw new Error("Failed to generate access token");
-  }
-
-  return nodemailer.createTransport({
-    service: "gmail", // ✅ IMPORTANT (don’t use host+port here)
-    auth: {
-      type: "OAuth2",
-      user: process.env.GOOGLE_USER,
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      refreshToken: process.env.GOOGLE_REFRESH_TOKEN,
-      accessToken: accessToken.token,
-    },
-  });
-}
-
-
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendEmail({ to, subject, html, text }) {
   if (!to) throw new Error("'to' field is empty");
 
   try {
-    const transporter = await createTransporter();
-
-    const info = await transporter.sendMail({
-      from: `"Askly" <${process.env.GOOGLE_USER}>`,
+    const { data, error } = await resend.emails.send({
+      from: 'Askly <onboarding@resend.dev>', // use this until you add your domain
       to,
       subject,
       html,
       text,
     });
 
-    console.log("✅ Email sent:", info.messageId);
-    return info;
+    if (error) throw new Error(error.message);
+
+    console.log("✅ Email sent:", data.id);
+    return data;
 
   } catch (error) {
     console.error("❌ EMAIL ERROR:", error);
