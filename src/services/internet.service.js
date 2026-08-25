@@ -24,3 +24,4 @@ export const searchWeb = async (query) => {
 
 }
 
+
