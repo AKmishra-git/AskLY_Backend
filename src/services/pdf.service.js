@@ -32,32 +32,47 @@ async function getEmbeddingsBatch(chunks) {
 }
 
 export async function processPDF(filePath, userId) {
-  const buffer = fs.readFileSync(filePath)
+  try {
+    console.log("Step 1 - File path:", filePath)
 
-  const data = await PDFParse(buffer) // ✅ ab kaam karega
+    // ✅ Check karo file exist karti hai
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`File not found: ${filePath}`)
+    }
 
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 800,
-    chunkOverlap: 100,
-  })
+    const buffer = fs.readFileSync(filePath)
+    console.log("Step 2 - Buffer size:", buffer.length)
 
-  const chunks = await splitter.splitText(data.text)
-  console.log(`Total chunks: ${chunks.length}`)
+    const data = await PDFParse(buffer)
+    console.log("Step 3 - Text length:", data.text.length)
 
-  const embeddings = await getEmbeddingsBatch(chunks)
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 800,
+      chunkOverlap: 100,
+    })
 
-  const records = chunks.map((chunk, i) => ({
-    id: uuidv4(),
-    values: embeddings[i],
-    metadata: {
-      text: chunk,
-      userId,
-    },
-  }))
+    const chunks = await splitter.splitText(data.text)
+    console.log("Step 4 - Chunks:", chunks.length)
 
-  await index.upsert(records)
+    const embeddings = await getEmbeddingsBatch(chunks)
+    console.log("Step 5 - Embeddings:", embeddings.length)
 
-  fs.unlinkSync(filePath)
+    const records = chunks.map((chunk, i) => ({
+      id: uuidv4(),
+      values: embeddings[i],
+      metadata: { text: chunk, userId },
+    }))
 
-  return { chunks: chunks.length }
+    await index.upsert(records)
+    console.log("Step 6 - Pinecone done ✅")
+
+    fs.unlinkSync(filePath)
+
+    return { chunks: chunks.length }
+
+  } catch (error) {
+    console.error("❌ Error at step:", error.message)
+    console.error("❌ Stack:", error.stack)
+    throw error
+  }
 }
