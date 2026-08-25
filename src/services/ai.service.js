@@ -17,7 +17,7 @@ import { retrieveContext } from "./rag.service.js"; // 🔥 RAG
 
 // Gemini (optional fallback or future use)
 const geminiModel = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash-lite",
+  model: "gemini-2.0-flash",
   apiKey: process.env.GEMINI_API_KEY,
 });
 
