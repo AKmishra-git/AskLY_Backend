@@ -1,13 +1,9 @@
 import fs from "fs";
-import { createRequire } from "module"; // ✅ add karo
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { getEmbedding } from "./rag.service.js";
 import { Pinecone } from "@pinecone-database/pinecone";
 import { v4 as uuidv4 } from "uuid";
-
-// ✅ CommonJS library ko ES Module mein use karne ka tarika
-const require = createRequire(import.meta.url);
-const PDFParse = require("pdf-parse");
+import { PDFParse } from "pdf-parse"; // ✅ v2: named export, ESM-native, no createRequire needed
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
 const index = pc.index("my-project");
@@ -32,6 +28,7 @@ async function getEmbeddingsBatch(chunks) {
 }
 
 export async function processPDF(filePath, userId) {
+  let parser;
   try {
     console.log("Step 1 - File path:", filePath)
 
@@ -43,7 +40,9 @@ export async function processPDF(filePath, userId) {
     const buffer = fs.readFileSync(filePath)
     console.log("Step 2 - Buffer size:", buffer.length)
 
-    const data = await PDFParse(buffer)
+    // ✅ v2 API: instantiate PDFParse with the buffer, then call getText()
+    parser = new PDFParse({ data: buffer })
+    const data = await parser.getText()
     console.log("Step 3 - Text length:", data.text.length)
 
     const splitter = new RecursiveCharacterTextSplitter({
@@ -74,5 +73,10 @@ export async function processPDF(filePath, userId) {
     console.error("❌ Error at step:", error.message)
     console.error("❌ Stack:", error.stack)
     throw error
+  } finally {
+    // ✅ v2 requires explicit cleanup of parser resources
+    if (parser) {
+      await parser.destroy()
+    }
   }
 }
