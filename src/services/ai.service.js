@@ -130,7 +130,7 @@ Rules:
 
     return finalMessage.text;
   } catch (error) {
-    console.error("AI Service Error:", error);
+    console.error("AI Service Error:", error?.message, error?.stack);
     return "Something went wrong while generating response.";
   }
 }
