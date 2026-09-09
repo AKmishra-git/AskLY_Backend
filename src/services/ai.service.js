@@ -6,7 +6,7 @@ import {
   tool,
   createAgent,
 } from "langchain";
-import { ChatMistralAI } from "@langchain/mistralai";
+import { ChatGroq } from "@langchain/groq";
 import * as z from "zod";
 import { searchWeb } from "./internet.service.js";
 import { retrieveContext } from "./rag.service.js"; // 🔥 RAG
@@ -21,10 +21,10 @@ const geminiModel = new ChatGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 });
 
-// Mistral (main model)
-const mistralModel = new ChatMistralAI({
-  model: "mistral-small-latest",
-  apiKey: process.env.MISTRAL_API_KEY,
+// Groq (main model — fast, generous free tier)
+const groqModel = new ChatGroq({
+  model: "llama-3.3-70b-versatile", // or "llama-3.1-8b-instant" for max speed
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 // =====================
@@ -51,7 +51,7 @@ const searchInternetTool = tool(
 // =====================
 
 const agent = createAgent({
-  model: mistralModel,
+  model: groqModel,
   tools: [searchInternetTool],
 });
 
@@ -141,7 +141,7 @@ Rules:
 
 export async function generateChatTitle(message) {
   try {
-    const response = await mistralModel.invoke([
+    const response = await groqModel.invoke([
       new SystemMessage(`
 You generate short and clear chat titles (2–4 words).
 Make them meaningful and relevant.
@@ -151,7 +151,7 @@ Make them meaningful and relevant.
 
     return response.text;
   } catch (error) {
-    console.error("Title generation error:", error);
+    console.error("Title generation error:", error?.message, error?.stack);
     return "New Chat";
   }
 }
