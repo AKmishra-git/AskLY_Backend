@@ -23,7 +23,7 @@ const geminiModel = new ChatGoogleGenerativeAI({
 
 // Groq (main model — fast, generous free tier)
 const groqModel = new ChatGroq({
-  model: "llama-3.3-70b-versatile", // or "llama-3.1-8b-instant" for max speed
+  model: process.env.GROQ_MODEL,
   apiKey: process.env.GROQ_API_KEY,
 });
 
